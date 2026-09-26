@@ -19,45 +19,25 @@ if (!accessToken || !userId || !dir) {
 
 const PROJECT = 'sjhwllnhuozxeplpygnc'
 
-const ENTRIES = [
-  {
-    file: '01-build-a-mini-catalogue.md',
-    title: 'Build a mini-catalogue from scratch',
-    category: 'Playbooks',
-    tags: ['mini-catalogue', 'playbook', 'onboarding'],
-    pinned: true,
-  },
-  {
-    file: '02-starter-files.md',
-    title: 'Starter files — copy these in',
-    category: 'Playbooks',
-    tags: ['mini-catalogue', 'starter', 'code'],
-    pinned: true,
-  },
-  {
-    file: '03-health-monitoring.md',
-    title: 'Health monitoring — the tripwire',
-    category: 'Playbooks',
-    tags: ['health', 'monitoring', 'analytics'],
-    pinned: true,
-  },
-  {
-    file: '04-deploy-and-verify.md',
-    title: 'Deploy and verify a catalogue',
-    category: 'Playbooks',
-    tags: ['deploy', 'verify', 'checklist'],
-    pinned: false,
-  },
-]
+/**
+ * Entries are described once, in craftbook.manifest.json, which
+ * update-craftbook.mjs also reads. This list used to be duplicated here, which
+ * is how the health entry came to be stored under a title its own heading did
+ * not use — found only when an update refused to apply. One manifest is a thing
+ * that cannot drift the way two hand-typed copies can.
+ */
+const manifest = JSON.parse(
+  fs.readFileSync(path.join(process.cwd(), 'scripts', 'craftbook.manifest.json'), 'utf8')
+)
 
 /** A delimiter that cannot appear in the prose. Verified, not assumed. */
 const TAG = '$craftbook$'
-for (const e of ENTRIES) {
+for (const e of manifest) {
   const body = fs.readFileSync(path.join(dir, e.file), 'utf8')
   if (body.includes(TAG)) throw new Error(`${e.file} contains the delimiter ${TAG}`)
 }
 
-const values = ENTRIES.map((e) => {
+const values = manifest.map((e) => {
   const body = fs.readFileSync(path.join(dir, e.file), 'utf8')
   const esc = (s) => `'${String(s).replace(/'/g, "''")}'`
   const arr = (list) => `array[${list.map(esc).join(', ')}]::text[]`
