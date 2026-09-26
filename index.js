@@ -215,9 +215,14 @@ export function flush() {
  * @param {boolean} [opts.debug]   Log what is queued and why things are dropped
  * @param {string} [opts.appVersion]
  * @param {boolean} [opts.autoPageView=true] Patch the History API to report
- *   page views. Set false if something else already reports them - kikoi, for
- *   instance, writes `page_views` for the shop owner's Keel card, and running
- *   both would double-count every navigation.
+ *   page views. Set false when a site already writes page views somewhere else.
+ *
+ *   Not a workaround. A site may legitimately serve two audiences from one
+ *   storefront: kikoi writes `page_views` for the shop owner's Keel card, and
+ *   uses site_events for health. That is a settled decision, not an open
+ *   question - two audiences, two tables, one event vocabulary, and neither can
+ *   break the other. Turning both on would double-count every navigation, so the
+ *   option exists to let a site opt out, not to defer a decision.
  * @param {object} [opts.win]      Injectable window, for tests
  */
 export function init(opts = {}) {
