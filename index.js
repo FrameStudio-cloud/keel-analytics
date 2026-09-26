@@ -209,6 +209,10 @@ export function flush() {
  * @param {string} opts.apiBase    e.g. https://keel-api-37rh.onrender.com
  * @param {boolean} [opts.debug]   Log what is queued and why things are dropped
  * @param {string} [opts.appVersion]
+ * @param {boolean} [opts.autoPageView=true] Patch the History API to report
+ *   page views. Set false if something else already reports them - kikoi, for
+ *   instance, writes `page_views` for the shop owner's Keel card, and running
+ *   both would double-count every navigation.
  * @param {object} [opts.win]      Injectable window, for tests
  */
 export function init(opts = {}) {
@@ -217,6 +221,7 @@ export function init(opts = {}) {
     apiBase = 'https://keel-api-37rh.onrender.com',
     debug = false,
     appVersion = null,
+    autoPageView = true,
     win = typeof window !== 'undefined' ? window : null,
   } = opts
 
@@ -236,7 +241,7 @@ export function init(opts = {}) {
   if (state.debug) warn('initialised against', state.apiBase)
 
   if (win) {
-    patchHistory(win)
+    if (autoPageView) patchHistory(win)
     watchNavigation(win)
     watchErrors(win)
   }

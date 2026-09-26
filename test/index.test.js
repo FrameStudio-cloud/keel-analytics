@@ -252,6 +252,43 @@ test('a throwing transport never reaches the host app', () => {
   assert.doesNotThrow(() => health('catalogue', false))
 })
 
+test('autoPageView:false leaves page views to the host app', () => {
+  const sent = []
+  const win = fakeWindow('/shop')
+  init({
+    token: 't', apiBase: 'https://api.test', autoPageView: false,
+    transport: (b) => sent.push(...b), win,
+  })
+  assert.equal(sent.filter((e) => e.name === 'page_view').length, 0)
+
+  // but the rest of the SDK still works
+  health('catalogue', false)
+  assert.equal(sent.length, 1)
+  assert.equal(sent[0].name, 'health_fail')
+})
+
+test('a page_view payload never carries a null path', () => {
+  const sent = []
+  const win = fakeWindow('/')
+  init({ token: 't', apiBase: 'https://api.test', transport: (b) => sent.push(...b), win })
+  // no window.location.pathname reachable from the SDK in Node
+  for (const e of sent) {
+    assert.ok(!('path' in e) || e.path !== null, 'null path must be omitted, not sent as null')
+  }
+})
+
+test('an event with no resolvable path omits the key entirely', () => {
+  const sent = []
+  init({
+    token: 't', apiBase: 'https://api.test', win: null,
+    transport: (b) => sent.push(...b),
+  })
+  assert.equal(track('product_viewed', { name: 'Chair' }), true)
+  const e = sent.find((x) => x.name === 'product_viewed')
+  assert.ok(e, 'event was sent')
+  assert.equal('path' in e, false, 'key must be absent, not null')
+})
+
 test('before init every public function is a safe no-op', () => {
   assert.doesNotThrow(() => {
     track('page_view')
