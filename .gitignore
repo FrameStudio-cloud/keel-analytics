@@ -1,3 +1,10 @@
 node_modules/
 *.log
 .DS_Store
+
+# Screenshots written by the verification runs. They are evidence for a change,
+# not an input to one, and there are dozens of them after a few sessions.
+*.png
+
+# Captured API payloads. Regenerate with test/build-fixture.mjs.
+test/fixtures/
