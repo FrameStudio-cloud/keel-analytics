@@ -83,11 +83,19 @@ resource it does not understand.
 
 Events queue and batch (max 20, matching the collector). The queue flushes on a
 30-second interval, when it reaches a full batch, and on `pagehide` /
-`visibilitychange` via `sendBeacon` — because a plain `fetch` during unload is
-cancelled by the browser and the last batch is lost. This is also why the SDK is
-a bundled npm dependency rather than a script tag from keel-api: keel-api sleeps,
-so a script served by it is unavailable during exactly the window it would be
-meant to explain.
+`visibilitychange` — with `keepalive` so the request survives the page being
+unloaded.
+
+It uses `fetch(..., { keepalive: true })` and **not** `navigator.sendBeacon`,
+which is the obvious choice for a last-gasp flush and is wrong here: sendBeacon
+cannot set custom headers, so the `x-keel-site-token` never went out, the
+collector answered 401, and sendBeacon had already returned `true` so the SDK
+reported success. Health bars were permanently empty with nothing in any log to
+explain it. Only loading the real site in a real browser caught it.
+
+This is also why the SDK is a bundled npm dependency rather than a script tag
+served by keel-api: keel-api sleeps, so a script served by it is unavailable
+during exactly the window it would be meant to explain.
 
 ## Development
 

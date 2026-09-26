@@ -289,6 +289,39 @@ test('an event with no resolvable path omits the key entirely', () => {
   assert.equal('path' in e, false, 'key must be absent, not null')
 })
 
+test('the transport ALWAYS sends the site token as a header', async () => {
+  // Regression guard. The transport used to prefer navigator.sendBeacon for
+  // unload flushes, which cannot set custom headers - so every event was
+  // rejected 401 by the collector while sendBeacon reported success. Nothing
+  // errored; the health bars were simply always empty. Only a real browser
+  // showed it, because the failure was an absent header.
+  const calls = []
+  const realFetch = globalThis.fetch
+  globalThis.fetch = async (url, opts) => {
+    calls.push({ url, opts })
+    return { ok: true, status: 200, text: async () => '{"ok":true}' }
+  }
+  try {
+    __reset()
+    init({ token: 'secret-shop-token', apiBase: 'https://api.test', win: null })
+    track('product_viewed', { name: 'Chair' })
+    flush()
+    await new Promise((r) => setTimeout(r, 10))
+  } finally {
+    globalThis.fetch = realFetch
+  }
+
+  assert.equal(calls.length, 1, 'exactly one request')
+  assert.equal(calls[0].url, 'https://api.test/api/events')
+  assert.equal(calls[0].opts.headers['x-keel-site-token'], 'secret-shop-token')
+  assert.equal(calls[0].opts.method, 'POST')
+  assert.equal(calls[0].opts.keepalive, true, 'unload flushes must survive navigation')
+  assert.ok(
+    !('sendBeacon' in calls[0].opts),
+    'must not route through sendBeacon, which drops the token header',
+  )
+})
+
 test('before init every public function is a safe no-op', () => {
   assert.doesNotThrow(() => {
     track('page_view')

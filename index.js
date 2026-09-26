@@ -137,21 +137,26 @@ function scrub(value, depth = 0) {
 /* ------------------------------------------------------------- transport */
 
 /**
- * sendBeacon where available, fetch otherwise.
+ * Send over HTTP.
  *
- * sendBeacon survives the page being unloaded, which is exactly the case that
- * matters: the last flush of a queue usually happens during navigation. A plain
- * fetch there is cancelled by the browser and the events are lost.
+ * `keepalive` rather than `navigator.sendBeacon`, deliberately.
+ *
+ * sendBeacon looks like the right tool for a flush during page unload - it is
+ * the classic "last event" escape hatch - but it CANNOT SET CUSTOM HEADERS. The
+ * site token travels in `x-keel-site-token`, so every beacon was a request with
+ * no token, the collector answered 401, and sendBeacon had already returned
+ * `true` so the SDK reported success. The result was a health bar that stayed
+ * empty forever with nothing in any log to explain it. This was found by
+ * loading the real site in a real browser, because no test can see a header
+ * that was never attached.
+ *
+ * `fetch(..., { keepalive: true })` survives the page unloading AND carries the
+ * header, so it is strictly better here. Payloads are a few hundred bytes, well
+ * under the keepalive body limit.
  */
 function defaultTransport(events, useBeacon) {
   const url = `${state.apiBase}/api/events`
   const body = JSON.stringify(events)
-
-  if (useBeacon && typeof navigator !== 'undefined' && navigator.sendBeacon) {
-    const blob = new Blob([body], { type: 'application/json' })
-    if (navigator.sendBeacon(url, blob)) return
-    // fall through to fetch if the browser refused the beacon (usually size)
-  }
 
   if (typeof fetch !== 'function') return
   fetch(url, {
