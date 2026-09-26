@@ -1,0 +1,30 @@
+{
+  "name": "@framestudio/keel-analytics",
+  "version": "0.1.0",
+  "description": "Tiny analytics + data-health client for Keel storefronts. Import it, init with a site token, and page views, errors and data health report themselves.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "module": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "analytics",
+    "keel",
+    "storefront",
+    "health"
+  ],
+  "scripts": {
+    "test": "node --test test/index.test.js",
+    "test:e2e": "node test/e2e.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
