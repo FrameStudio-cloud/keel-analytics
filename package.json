@@ -1,6 +1,6 @@
 {
   "name": "@framestudio/keel-analytics",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Tiny analytics + data-health client for Keel storefronts. Import it, init with a site token, and page views, errors and data health report themselves.",
   "license": "MIT",
   "type": "module",

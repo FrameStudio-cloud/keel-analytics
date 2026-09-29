@@ -1,5 +1,12 @@
 [
   {
+    "file": "00-architecture.md",
+    "title": "Architecture — the two systems, and who reads them",
+    "category": "Playbooks",
+    "tags": ["architecture", "analytics", "health", "onboarding"],
+    "pinned": true
+  },
+  {
     "file": "01-build-a-mini-catalogue.md",
     "title": "Build a mini-catalogue from scratch",
     "category": "Playbooks",
@@ -25,6 +32,6 @@
     "title": "Deploy and verify a catalogue",
     "category": "Playbooks",
     "tags": ["deploy", "verify", "checklist"],
-    "pinned": false
+    "pinned": true
   }
 ]
