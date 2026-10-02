@@ -185,10 +185,25 @@ test('health state is tracked per resource, not globally', () => {
   assert.equal(sent.length, 2)
 })
 
-test('an unknown health resource is refused', () => {
+test('a resource outside the starter set is sent, not silently dropped', () => {
   const { sent } = setup()
-  assert.equal(health('mystery_thing', false), false)
-  assert.equal(sent.length, 0)
+  // Was: refused in the browser, so nothing was sent, nothing was logged (the
+  // warning only fires in development) and the console showed a site that had
+  // never reported anything. The collector now owns that decision, and it can
+  // only make it correctly for a site it knows.
+  assert.equal(health('mystery_thing', false), true)
+  assert.equal(sent.length, 1)
+  assert.equal(sent[0].name, 'health_fail')
+  assert.equal(sent[0].properties.resource, 'mystery_thing')
+})
+
+test('an undeclared resource still obeys transitions', () => {
+  const { sent } = setup()
+  assert.equal(health('delivery', false), true)
+  assert.equal(health('delivery', false, 'still down'), false, 'repeat state must not re-send')
+  assert.equal(health('delivery', true), true, 'recovery is a transition')
+  assert.equal(sent.length, 2)
+  assert.deepEqual(sent.map((e) => e.name), ['health_fail', 'health_ok'])
 })
 
 test('every advertised health resource is accepted', () => {

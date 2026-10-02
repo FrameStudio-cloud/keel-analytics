@@ -20,10 +20,14 @@ analytics.health('catalogue', false, 'request timed out')
 ## Why it is shaped like this
 
 **The event vocabulary is closed.** Anything outside the list is refused in the
-browser, before a request is made, and again by a `CHECK` constraint in the
-database. That double guard is the line between a tool you can maintain and a
-product you have to support forever. If you need a new event, add it to `EVENTS`
-here and to the constraint in the migration.
+browser, before a request is made, and again by a foreign key to `event_types`
+in the database. That double guard is the line between a tool you can maintain
+and a product you have to support forever. If you need a new event, add it to
+`EVENTS` here and insert it into `event_types` — the console picks up its label
+with no deploy.
+
+Health resources are deliberately **not** closed, because they are per-site and
+this file cannot know a site's declarations. The server is the gate instead.
 
 | event | when |
 | --- | --- |
@@ -121,9 +125,21 @@ flush()                     // force a send
 resetVisitor()              // forget the visitor, issue a new id
 ```
 
-`health()` accepts `settings`, `catalogue`, `product`, `banners`, `page_content`.
-Anything else is refused, so the console never has to render a bar for a
-resource it does not understand.
+`health()` is not restricted to a fixed list. `HEALTH_RESOURCES` is a starter
+set — `settings`, `catalogue`, `product`, `banners`, `page_content`, `services`,
+`delivery`, `faq` — so you can pick a name that already means something rather
+than inventing one, but any name is sent.
+
+The collector decides. A site may only report the resources it has declared for
+itself, so the console can never show a bar for a signal that can never light.
+That is why this is not gated locally: health resources are per-site, and this
+file cannot know your site's declarations. A resource you have not declared is
+refused server-side, where the rejection is visible and attributable.
+
+Before 0.3.0 this was an allowlist, and the browser refused anything else. The
+warning fired only in development, so a legitimate new resource was discarded
+with no request, no row and no trace — and the console showed a site that had
+never reported anything.
 
 ## Delivery
 

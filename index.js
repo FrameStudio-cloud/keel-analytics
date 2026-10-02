@@ -18,6 +18,9 @@
  * 1. The event vocabulary is CLOSED. Anything not in EVENTS is refused locally,
  *    before a request is made. This is the line between a tool and a product
  *    you have to maintain forever.
+ *    Health resources are deliberately NOT closed - see HEALTH_RESOURCES. They
+ *    became per-site, and this file cannot know a site's declarations, so the
+ *    collector is the gate.
  * 2. Never throw into the host app. A failed analytics call must not break a
  *    shop's page.
  * 3. Never send customer contact details. A storefront has contact forms and a
@@ -47,13 +50,37 @@ export const EVENTS = [
   'feature_used',
 ]
 
-/** Resources the console knows how to show a bar for. */
+/**
+ * The starter set of health resources - NOT an allowlist.
+ *
+ * It exists so someone building a storefront can see the names already in use
+ * and pick one, rather than inventing `pricing` when `services` is the word
+ * every other service site already uses. A site may report any resource name; the
+ * collector decides, and it refuses a name the site has not declared for itself.
+ *
+ * This was an allowlist until 0.3.0, and that was wrong in a way only production
+ * exposed. Health resources became per-site: `catalogue` is right for a retail
+ * storefront and meaningless for a laundry, which cares about delivery areas.
+ * Refusing an undeclared-but-legitimate name in the browser meant a new site's
+ * health was silently discarded - the warning fires only in development, so
+ * nothing was sent, nothing was logged, and the console showed a site that had
+ * never reported anything. The SDK was second-guessing a contract it cannot know
+ * and the server can enforce.
+ *
+ * Note the asymmetry with EVENTS, which stays closed: event names are enforced by
+ * a foreign key to `event_types`, so a wrong one is rejected server-side on
+ * arrival. Health resources are a property value checked per site, and the SDK
+ * has no way to know this site's declarations. The server is the gate for both.
+ */
 export const HEALTH_RESOURCES = [
   'settings',
   'catalogue',
   'product',
   'banners',
   'page_content',
+  'services',
+  'delivery',
+  'faq',
 ]
 
 /** Must match the collector's deny-list. */
@@ -577,12 +604,17 @@ export function captureError(error, context = {}) {
  *   analytics.health('catalogue', false, 'request timed out')
  */
 export function health(resource, ok, detail) {
-  if (!state.initialised) return false
-  if (!HEALTH_RESOURCES.includes(resource)) {
-    warn(`"${resource}" is not a known health resource. Allowed: ${HEALTH_RESOURCES.join(', ')}`)
-    return false
-  }
-  const previous = state.health[resource]
+   if (!state.initialised) return false
+   // Warned about, but NOT refused. See HEALTH_RESOURCES: this used to return
+   // false here, which meant an unknown-but-legitimate resource was dropped in
+   // the browser with no request, no row and - because the warning only fires in
+   // development - no trace at all. The collector now rejects a resource the
+   // site has not declared, so a genuine mistake is refused where it can be
+   // seen and attributed, rather than vanishing here.
+   if (!HEALTH_RESOURCES.includes(resource)) {
+   warn(`"${resource}" is not in the SDK's starter set. Sending it anyway: a site may report any resource it has declared. If the collector refuses it, declare it in site_health_resources.`)
+   }
+   const previous = state.health[resource]
   if (previous === ok) return false
 
   state.health[resource] = ok

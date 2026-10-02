@@ -53,6 +53,13 @@ input to one.
 1. **The event vocabulary is closed.** `EVENTS` is the list, and the database enforces
    the same list by foreign key to `event_types`. Adding an event is a database insert,
    not a code change, so the console picks up its label with no deploy.
+1a. **Health resources are NOT closed, and must not become closed again.** They became
+   per-site in 0.3.0, so the set is what each site declared, not what this file knows.
+   `HEALTH_RESOURCES` is a starter set for discoverability. Refusing anything else here
+   was a production-only failure: the warning fires in development only, so a
+   legitimate new resource was dropped with no request, no row and no trace, and the
+   console showed a site that had never reported anything. The collector validates
+   per site and can refuse with a reason; this file cannot.
 2. **Never throw into the host app.** A failed analytics call must not break a shop's
    page mid-sale. Every public function is wrapped.
 3. **Never send customer contact details.** Keys matching
