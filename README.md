@@ -126,9 +126,10 @@ resetVisitor()              // forget the visitor, issue a new id
 ```
 
 `health()` is not restricted to a fixed list. `HEALTH_RESOURCES` is a starter
-set — `settings`, `catalogue`, `product`, `banners`, `page_content`, `services`,
-`delivery`, `faq` — so you can pick a name that already means something rather
-than inventing one, but any name is sent.
+set of names already in use — `settings`, `catalogue`, `product`, `banners`,
+`page_content`, `services`, `delivery`, `faq` — so you can pick one that already
+means something rather than inventing one. It is a sample, not the catalogue:
+`public.health_resources` is the full list, and it grows without a release here.
 
 The collector decides. A site may only report the resources it has declared for
 itself, so the console can never show a bar for a signal that can never light.
